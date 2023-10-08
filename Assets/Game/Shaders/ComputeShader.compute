@@ -1,0 +1,169 @@
+#pragma kernel BoidsSteeringCS
+#pragma kernel BoidsDataCS
+
+struct BoidData
+{
+    float2 velocity;
+    float2 position;
+};
+
+#define THREAD_GROUP_SIZE 64
+
+// Buffers
+RWStructuredBuffer<BoidData> boids_data_buffer;     // Boids Data read-write structured buffer
+RWStructuredBuffer<float2> boids_steering_buffer;   // Boids Steering read-write structured buffer
+
+// Uniforms
+int boids_count;
+float boids_max_speed;
+float boids_max_steering;
+        
+float cohesion_radius;
+float cohesion_weight;
+float alignment_radius;
+float alignment_weight;
+float separation_radius;
+float separation_weight;
+        
+float2 simulation_area;
+float simulation_area_weight;
+   
+float delta_time;
+
+
+// Limit vector length to max
+float2 limit(float2 vec, const float max)
+{
+    const float len = length(vec);
+    if (len > max)
+    {
+        return vec * (max / len);
+    }
+    return vec;
+}
+
+// Check if boid is in area, if not, return acceleration to get back in area
+float2 checkArea(float2 position)
+{
+    float2 acceleration = float2(0, 0);
+
+    acceleration.x = (position.x < -simulation_area.x / 2.0)
+                    ? 1.0 // Too far left, go right
+                    : (position.x > simulation_area.x / 2.0)
+                        ? -1.0 // Too far right, go left
+                        : 0.0; // In area, no need to change
+    acceleration.y = (position.y < -simulation_area.y / 2.0)
+                    ? 1.0 // Too far down, go up
+                    : (position.y > simulation_area.y / 2.0)
+                        ? -1.0 // Too far up, go down
+                        : 0.0; // In area, no need to change
+
+    return acceleration;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void BoidsSteeringCS (uint3 d_tid : SV_DispatchThreadID, uint gi : SV_GroupIndex)
+{
+    const unsigned int this_id = d_tid.x; // Self ID
+    const BoidData this_boid = boids_data_buffer[this_id]; // This boid data
+
+    // Position offsets influenced by cohesion, alignment, and separation
+    float2 separationPositionOffset = float2(0, 0);
+    float2 alignmentPositionOffset = float2(0, 0);
+    float2 cohesionPositionOffset = float2(0, 0);
+
+    // Cumulative count of boids that need to be influenced by cohesion, alignment, and separation
+    int separationBoidsCount = 0;
+    int alignmentBoidsCount = 0;
+    int cohesionBoidsCount = 0;
+    
+    // Iterate over all boids in the group
+    for (uint other_id = 0; other_id < (uint) boids_count; other_id++)
+    {
+        if (this_id == other_id) continue; // Skip self
+        
+        const BoidData other_boid = boids_data_buffer[other_id]; // Other boid data
+        const float dist = distance(this_boid.position, other_boid.position);
+
+        // Separation
+        if (dist <= separation_radius)
+        {
+            float2 diff = normalize(this_boid.position - other_boid.position);
+            diff /= dist;
+            separationPositionOffset += diff;
+            separationBoidsCount++;
+        }
+
+        // Alignment
+        if (dist <= alignment_radius)
+        {
+            alignmentPositionOffset += other_boid.velocity;
+            alignmentBoidsCount++;
+        }
+
+        // Cohesion
+        if (dist <= cohesion_radius)
+        {
+            cohesionPositionOffset += other_boid.position;
+            cohesionBoidsCount++;
+        }
+    }  
+
+    // Apply rules
+    float2 separationSteering = float2(0, 0);
+    if (separationBoidsCount > 0)
+    {
+        separationSteering = separationPositionOffset / (float)separationBoidsCount;    // Calculate the average
+        separationSteering = normalize(separationSteering) * boids_max_speed;           // Adjust to maximum speed
+        separationSteering = separationSteering - this_boid.velocity;                   // Calculate steering force
+        separationSteering = limit(separationSteering, boids_max_steering);             // Limit the steering force
+    }
+
+    float2 alignmentSteering = float2(0, 0);
+    if (alignmentBoidsCount > 0)
+    {
+        alignmentSteering = alignmentPositionOffset / (float)alignmentBoidsCount;    
+        alignmentSteering = normalize(alignmentSteering) * boids_max_speed;
+        alignmentSteering = alignmentSteering - this_boid.velocity;          
+        alignmentSteering = limit(alignmentSteering, boids_max_steering);
+    }
+
+    float2 cohesionSteering = float2(0, 0);
+    if (cohesionBoidsCount > 0)
+    {
+        cohesionPositionOffset = cohesionPositionOffset / (float)cohesionBoidsCount;    
+        cohesionSteering = cohesionPositionOffset - this_boid.position;      
+        cohesionSteering = normalize(cohesionSteering) * boids_max_speed;
+        cohesionSteering = cohesionSteering - this_boid.velocity;          
+        cohesionSteering = limit(cohesionSteering, boids_max_steering);
+    }
+    
+    // Resulting steering force
+    float2 steering = float2(0, 0);
+    steering += alignmentSteering * alignment_weight;
+    steering += cohesionSteering * cohesion_weight;  
+    steering += separationSteering * separation_weight;  
+   
+    boids_steering_buffer[this_id] = steering;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void BoidsDataCS(uint3 d_tid : SV_DispatchThreadID)
+{
+    const unsigned int this_id = d_tid.x;
+                                           
+    BoidData boid = boids_data_buffer[this_id];
+    float2 steering = boids_steering_buffer[this_id];
+   
+    // Apply repelling force when approaching simulation bounds
+    steering += checkArea(boid.position) * simulation_area_weight;
+
+    // Apply steering force to velocity
+    boid.velocity += steering * delta_time;
+    boid.velocity = limit(boid.velocity, boids_max_speed);
+
+    // Update position
+    boid.position += boid.velocity * delta_time;
+                                           
+    boids_data_buffer[this_id] = boid;
+}
