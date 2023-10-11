@@ -184,7 +184,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 55
+  orthographic size: 75
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -251,12 +251,13 @@ MonoBehaviour:
   boidsMaxSteering: 1
   cohesionRadius: 1
   alignmentRadius: 1
-  separationRadius: 0.5
-  cohesionWeight: 0.5
-  alignmentWeight: 0.5
-  separationWeight: 2
+  separationRadius: 1
+  cohesionWeight: 3
+  alignmentWeight: 3
+  separationWeight: 5
   simulationArea: {x: 175, y: 100}
-  simulationAreaWeight: 10
+  simulationAreaSoftness: {x: 50, y: 50}
+  simulationAreaWeight: 7.5
 --- !u!4 &1919063420
 Transform:
   m_ObjectHideFlags: 0

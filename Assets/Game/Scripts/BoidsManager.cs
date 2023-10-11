@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class BoidsManager : MonoBehaviour
 {
@@ -9,6 +11,9 @@ public class BoidsManager : MonoBehaviour
     }
 
     // Inspector
+    [Header("Time")]
+    [Range(0,10)] [SerializeField] private float simulationTimeScale = 1.0f; // Time scale for simulation
+    
     [Header("Simulation")] 
     [SerializeField] private ComputeShader boidsComputeShader; // Compute Shader for Boids simulation
     
@@ -27,6 +32,7 @@ public class BoidsManager : MonoBehaviour
 
     [Header("Area")] 
     [SerializeField] internal Vector2 simulationArea = new Vector2(32.0f, 32.0f); // Simulation dimensions
+    [SerializeField] private Vector2 simulationAreaSoftness = new Vector2(8.0f, 8.0f); // Softness of simulation area
     [SerializeField] private float simulationAreaWeight = 10.0f; // Bounding avoidance weight
 
     // Internal
@@ -43,9 +49,14 @@ public class BoidsManager : MonoBehaviour
         SetupKernels();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         RunSimulation();
+    }
+
+    private void OnValidate()
+    {
+        Time.timeScale = simulationTimeScale;
     }
 
     private void OnDestroy()
@@ -119,9 +130,10 @@ public class BoidsManager : MonoBehaviour
         boidsComputeShader.SetFloat("separation_weight", separationWeight);
         
         boidsComputeShader.SetVector("simulation_area", simulationArea);
+        boidsComputeShader.SetVector("simulation_area_softness", simulationAreaSoftness);
         boidsComputeShader.SetFloat("simulation_area_weight", simulationAreaWeight);
    
-        boidsComputeShader.SetFloat("delta_time", Time.deltaTime);
+        boidsComputeShader.SetFloat("delta_time", Time.fixedDeltaTime);
 
         // Buffers
         boidsComputeShader.SetBuffer(boidsSteeringKernelId, "boids_steering_buffer", boidsSteeringBuffer);
@@ -142,5 +154,8 @@ public class BoidsManager : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(Vector3.zero, new Vector3(simulationArea.x, simulationArea.y, 0.0f));
+        
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(Vector3.zero, new Vector3(simulationArea.x + simulationAreaSoftness.x, simulationArea.y + simulationAreaSoftness.y, 0.0f));
     }
 }

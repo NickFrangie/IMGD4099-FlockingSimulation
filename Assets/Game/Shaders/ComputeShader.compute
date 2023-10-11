@@ -26,6 +26,7 @@ float separation_radius;
 float separation_weight;
         
 float2 simulation_area;
+float2 simulation_area_softness;
 float simulation_area_weight;
    
 float delta_time;
@@ -46,18 +47,29 @@ float2 limit(float2 vec, const float max)
 float2 checkArea(float2 position)
 {
     float2 acceleration = float2(0, 0);
-
-    acceleration.x = (position.x < -simulation_area.x / 2.0)
-                    ? 1.0 // Too far left, go right
-                    : (position.x > simulation_area.x / 2.0)
-                        ? -1.0 // Too far right, go left
-                        : 0.0; // In area, no need to change
-    acceleration.y = (position.y < -simulation_area.y / 2.0)
-                    ? 1.0 // Too far down, go up
-                    : (position.y > simulation_area.y / 2.0)
-                        ? -1.0 // Too far up, go down
-                        : 0.0; // In area, no need to change
-
+    
+    if (position.x < -simulation_area.x / 2.0)
+    {
+        // Too far left, go right
+        acceleration.x = lerp(0, 1, (-position.x - simulation_area.x / 2.0) / simulation_area_softness.x);
+    }
+    else if (position.x > simulation_area.x / 2.0)
+    {
+        // Too far right, go left
+        acceleration.x = lerp(0, -1, (position.x - simulation_area.x / 2.0) / simulation_area_softness.x);
+    }
+    
+    if (position.y < -simulation_area.y / 2.0)
+    {
+        // Too far down, go up
+        acceleration.y = lerp(0, 1, (-position.y - simulation_area.y / 2.0) / simulation_area_softness.y);
+    }
+    else if (position.y > simulation_area.y / 2.0)
+    {
+        // Too far up, go down
+        acceleration.y = lerp(0, -1, (position.y - simulation_area.y / 2.0) / simulation_area_softness.y);
+    }
+    
     return acceleration;
 }
 

@@ -12,6 +12,7 @@ public class BoidsRenderer : MonoBehaviour
     // Internal
     private List<BoidBehavior> boids = new();
     private bool isInitialized = false;
+    private int activeBoidCount;
     
     // References
     private BoidsManager boidsManager;
@@ -29,8 +30,8 @@ public class BoidsRenderer : MonoBehaviour
 
     private void SpawnBoids()
     {
-        int boidsCount = boidsManager.boidsCount;
-        for (int i = 0; i < boidsCount; i++)
+        activeBoidCount = boidsManager.boidsCount;
+        for (int i = 0; i < activeBoidCount; i++)
         {
             BoidBehavior boid = Instantiate(boidPrefab, transform);
             Vector2 randomPosition = new Vector2(
@@ -49,7 +50,21 @@ public class BoidsRenderer : MonoBehaviour
     /// </summary>
     private void UpdateBoids()
     {
-        for (int i = 0; i < boids.Count; i++)
+        // Hide/Unhide boids
+        if (activeBoidCount != boidsManager.boidsCount)
+        {
+            int min = Mathf.Min(activeBoidCount, boidsManager.boidsCount);
+            int max = Mathf.Max(activeBoidCount, boidsManager.boidsCount);
+            
+            for (int i = min; i < max; i++)
+            {
+                boids[i].gameObject.SetActive(i < boidsManager.boidsCount);
+            }
+            activeBoidCount = boidsManager.boidsCount;
+        }
+        
+        // Update from BoidsManager
+        for (int i = 0; i < boidsManager.boidsCount; i++)
         {
             boids[i].UpdateBoid(boidsManager.boidsData[i]);
         }
