@@ -10,6 +10,9 @@ public class BoidsManager : MonoBehaviour
         public Vector2 position;
     }
 
+    // Singleton
+    internal static BoidsManager instance;
+    
     // Inspector
     [Header("Time")]
     [Range(0,10)] [SerializeField] private float simulationTimeScale = 1.0f; // Time scale for simulation
@@ -23,9 +26,9 @@ public class BoidsManager : MonoBehaviour
     [SerializeField] private float boidsMaxSteering = 1.0f;
 
     [Header("Controls")] 
-    [SerializeField] private float cohesionRadius = 1.0f; // Radius for applying cohesion to other individuals
-    [SerializeField] private float alignmentRadius = 1.0f; // Radius for applying alignment to other individuals
-    [SerializeField] private float separationRadius = 0.5f; // Radius for applying separation to other individuals
+    [SerializeField] internal float cohesionRadius = 1.0f; // Radius for applying cohesion to other individuals
+    [SerializeField] internal float alignmentRadius = 1.0f; // Radius for applying alignment to other individuals
+    [SerializeField] internal float separationRadius = 0.5f; // Radius for applying separation to other individuals
     [SerializeField] private float cohesionWeight = 0.5f; // Cohesion force appliance weight
     [SerializeField] private float alignmentWeight = 0.5f; // Alignment force appliance weight
     [SerializeField] private float separationWeight = 2.0f; // Separation force appliance weight
@@ -42,6 +45,18 @@ public class BoidsManager : MonoBehaviour
     internal BoidData[] boidsData;
     
     private int boidsSteeringKernelId, boidsDataKernelId; // Kernels for Boids steering and data updates
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            instance = this;    
+        }
+    }
 
     private void Start()
     {
@@ -62,6 +77,10 @@ public class BoidsManager : MonoBehaviour
     private void OnDestroy()
     {
         ReleaseBuffers();
+        if (instance == this)
+        {
+            instance = null;
+        }
     }
 
     /// <summary>
