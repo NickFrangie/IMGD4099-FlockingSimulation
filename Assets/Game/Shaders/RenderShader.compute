@@ -1,5 +1,5 @@
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel RenderCS
 
 struct BoidData
 {
@@ -9,12 +9,29 @@ struct BoidData
 
 #define THREAD_GROUP_SIZE 64
 
+// Uniforms
+int boids_count;
+int2 res;
+
 // Buffers
 RWTexture2D<float4> output;
 RWStructuredBuffer<BoidData> boids_data_buffer;     // Boids Data read-write structured buffer
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+[numthreads(THREAD_GROUP_SIZE,1,1)]
+void RenderCS (uint3 d_tid : SV_DispatchThreadID)
 {
-    output[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+    const unsigned int this_id = d_tid.x; // Self ID
+    if (this_id >= boids_count) return; // Out of bounds
+    
+    const BoidData this_boid = boids_data_buffer[this_id]; // This boid data
+
+    // (0,0) in world space is the middle of the texture (res.x / 2, res.y / 2)
+    // (-133.5, -75) in world space is the bottom left of the texture (0,0)
+    // (133.5, 75) in world space is the top right of the texture (res.x, res.y)
+
+    float2 world_center = float2(133.5, 75);
+    float2 texture_position = res * (this_boid.position + world_center) / (world_center * 2.0);
+
+    if (texture_position.x < 0 || texture_position.x >= res.x || texture_position.y < 0 || texture_position.y >= res.y) return;
+    output[texture_position] = float4(1.0, 1.0, 1.0, 1.0);
 }

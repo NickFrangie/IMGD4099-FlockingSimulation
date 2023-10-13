@@ -74,7 +74,7 @@ float2 checkArea(float2 position)
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
-void BoidsSteeringCS (uint3 d_tid : SV_DispatchThreadID, uint gi : SV_GroupIndex)
+void BoidsSteeringCS (uint3 d_tid : SV_DispatchThreadID)
 {
     const unsigned int this_id = d_tid.x; // Self ID
     const BoidData this_boid = boids_data_buffer[this_id]; // This boid data

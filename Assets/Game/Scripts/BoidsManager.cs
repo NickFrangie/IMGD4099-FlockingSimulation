@@ -11,7 +11,7 @@ public class BoidsManager : MonoBehaviour
     }
 
     // Constants
-    public const int MAX_BOIDS_COUNT = 10000;
+    public const int MAX_BOIDS_COUNT = 60000;
     
     // Singleton
     internal static BoidsManager instance;
@@ -42,8 +42,8 @@ public class BoidsManager : MonoBehaviour
     [SerializeField] internal float simulationAreaWeight = 10.0f; // Bounding avoidance weight
 
     // Internal
-    private ComputeBuffer boidsSteeringBuffer; // Buffer for Boids steering forces values storage
-    private ComputeBuffer boidsDataBuffer; // Buffer storing basic data of Boids (velocity, position, Transform, etc.)
+    internal ComputeBuffer boidsSteeringBuffer; // Buffer for Boids steering forces values storage
+    internal ComputeBuffer boidsDataBuffer; // Buffer storing basic data of Boids (velocity, position, Transform, etc.)
 
     internal BoidData[] boidsData;
     
