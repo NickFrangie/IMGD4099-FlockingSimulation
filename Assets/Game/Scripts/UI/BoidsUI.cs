@@ -1,12 +1,18 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
 namespace Game.Scripts
 {
     [RequireComponent(typeof(CanvasGroup))]
     public class BoidsUI : MonoBehaviour
     {
+        // Inspector
+        [Header("References")]
+        [SerializeField] private BoidsDisplay boidsDisplay;
+        [SerializeField] private Button toggleButton;
+        
         // Internal
         private bool isShown = true;
         
@@ -48,6 +54,18 @@ namespace Game.Scripts
         public void OnResetButtonClicked()
         {
             BoidsManager.instance.Reset();
+        }
+        
+        public void OnToggleButtonClicked()
+        {
+            boidsDisplay.ToggleDisplay();
+            toggleButton.GetComponentInChildren<TMP_Text>().text = "Display Mode: " +
+                                                                   (boidsDisplay.isShaderMode
+                                                                       ? "Shader"
+                                                                       : "Game Objects");
+            toggleButton.GetComponent<Image>().color = boidsDisplay.isShaderMode
+                ? Color.green
+                : Color.red;
         }
     }
 }
