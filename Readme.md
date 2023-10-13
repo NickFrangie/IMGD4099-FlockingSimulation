@@ -12,7 +12,7 @@ between a GPU render shader, and a CPU implementation that uses Unity Game Objec
 # About
 Because WebGL does not support Unity Compute Shaders, I was unable to port this project to be playable in browser.
 However, included in this GitHub repository is a final build for this project, under the Releases section.
-You are free to download the executable and play the simulation, which should support any Windows, Mac, or Linux device.
+You are free to download the executable and play the simulation, which should support any Windows device.
 
 # References
 A variety of resources and references used in the development of this project.
