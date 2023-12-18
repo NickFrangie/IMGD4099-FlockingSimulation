@@ -1,4 +1,6 @@
-﻿# Controls
+![image](https://github.com/NickFrangie/IMGD4099-FlockingSimulation/assets/51765298/ecbee6f9-f049-40f8-8551-3b5a8dd69c77)
+
+ # Controls
 A panel of interactable controls and sliders is located on the right side of the screen, during the simulation.
 Use your mouse to click and drag the sliders to change the values of the simulation.
 
